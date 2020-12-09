@@ -6,12 +6,13 @@ mod paste_id;
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
+use std::fs;
 
 use rocket::data::{Data, ToByteUnit};
 use rocket::response::{content::Plain, Debug};
 use rocket::tokio::fs::File;
 use rocket::response::NamedFile;
-use rocket_contrib::serve::StaticFiles;
+// use rocket_contrib::serve::StaticFiles;
 
 
 use crate::paste_id::PasteID;
@@ -37,7 +38,8 @@ async fn retrieve(id: PasteID<'_>) -> Option<Plain<File>> {
 
 #[get("/<file..>",rank = 3)]
 async fn files(file: PathBuf) -> Result<(), Debug<io::Error>> {
-    NamedFile::open(Path::new("/service/webserver/static/").join(file)).await?;
+    println!("The requested file path is {:?}", fs::canonicalize(&file));
+    NamedFile::open(Path::new("./static/").join(file)).await?;
     Ok(())
 }
 
@@ -61,8 +63,9 @@ fn index() -> &'static str {
 
 #[launch]
 fn rocket() -> rocket::Rocket {
-    //rocket::ignite().mount("/", routes![index, upload, retrieve,files])
+    rocket::ignite().mount("/", routes![index, upload, retrieve,files])
+    /*
     rocket::ignite()
     .mount("/", StaticFiles::from("/service/webserver/"))
-    .launch()
+    .launch() */
 }
