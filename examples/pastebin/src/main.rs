@@ -4,10 +4,14 @@ mod paste_id;
 #[cfg(test)] mod tests;
 
 use std::io;
+use std::path::Path;
+use std::path::PathBuf;
 
 use rocket::data::{Data, ToByteUnit};
 use rocket::response::{content::Plain, Debug};
 use rocket::tokio::fs::File;
+use rocket::response::NamedFile;
+
 
 use crate::paste_id::PasteID;
 
@@ -24,10 +28,16 @@ async fn upload(paste: Data) -> Result<String, Debug<io::Error>> {
     Ok(url)
 }
 
-#[get("/<id>")]
+#[get("/<id>",rank = 2)]
 async fn retrieve(id: PasteID<'_>) -> Option<Plain<File>> {
     let filename = format!("upload/{id}", id = id);
     File::open(&filename).await.map(Plain).ok()
+}
+
+#[get("/<file..>",rank = 3)]
+async fn files(file: PathBuf) -> Result<(), Debug<io::Error>> {
+    NamedFile::open(Path::new("static/").join(file)).await?;
+    Ok(())
 }
 
 #[get("/")]
@@ -50,5 +60,5 @@ fn index() -> &'static str {
 
 #[launch]
 fn rocket() -> rocket::Rocket {
-    rocket::ignite().mount("/", routes![index, upload, retrieve])
+    rocket::ignite().mount("/", routes![index, upload, retrieve,files])
 }
