@@ -8,3 +8,4 @@ publish = false
 [dependencies]
 rocket = { path = "../../core/lib" }
 rand = "0.7"
+rocket_contrib = "0.4.6"
