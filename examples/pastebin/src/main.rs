@@ -36,7 +36,7 @@ async fn retrieve(id: PasteID<'_>) -> Option<Plain<File>> {
 
 #[get("/<file..>",rank = 3)]
 async fn files(file: PathBuf) -> Result<(), Debug<io::Error>> {
-    NamedFile::open(Path::new("static/").join(file)).await?;
+    NamedFile::open(Path::new("/static/").join(file)).await?;
     Ok(())
 }
 
