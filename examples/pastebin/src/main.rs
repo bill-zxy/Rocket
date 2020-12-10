@@ -6,12 +6,13 @@ mod paste_id;
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
-use std::fs;
+
 
 use rocket::data::{Data, ToByteUnit};
 use rocket::response::{content::Plain, Debug};
 use rocket::tokio::fs::File;
 use rocket::response::NamedFile;
+use rocket::response::status::NotFound;
 // use rocket_contrib::serve::StaticFiles;
 
 
@@ -36,36 +37,20 @@ async fn retrieve(id: PasteID<'_>) -> Option<Plain<File>> {
     File::open(&filename).await.map(Plain).ok()
 }
 
-#[get("/<file..>",rank = 3)]
-async fn files(file: PathBuf) -> Result<(), Debug<io::Error>> {
-    println!("The requested file path is {:?}", fs::canonicalize(&file));
-    NamedFile::open(Path::new("./static/").join(file)).await?;
-    Ok(())
+#[get("/<file..>", rank =3)]
+async fn files(file: PathBuf) -> Result<NamedFile, NotFound<String>> {
+    let path = Path::new("static/").join(file);
+    NamedFile::open(&path).await.map_err(|e| NotFound(e.to_string()))
 }
 
 #[get("/")]
-fn index() -> &'static str {
-    "
-    USAGE
-
-      POST /
-
-          accepts raw data in the body of the request and responds with a URL of
-          a page containing the body's content
-
-          EXAMPLE: curl --data-binary @file.txt http://localhost:8000
-
-      GET /<id>
-
-          retrieves the content for the paste with id `<id>`
-    "
+async fn index() -> Result<NamedFile, NotFound<String>> {
+    let path = Path::new("static/").join("index.html");
+    NamedFile::open(&path).await.map_err(|e| NotFound(e.to_string()))
 }
 
 #[launch]
 fn rocket() -> rocket::Rocket {
     rocket::ignite().mount("/", routes![index, upload, retrieve,files])
-    /*
-    rocket::ignite()
-    .mount("/", StaticFiles::from("/service/webserver/"))
-    .launch() */
+   
 }
