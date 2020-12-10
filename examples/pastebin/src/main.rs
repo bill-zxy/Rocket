@@ -18,7 +18,7 @@ use rocket::response::status::NotFound;
 
 use crate::paste_id::PasteID;
 
-const HOST: &str = "http://localhost:8000";
+const HOST: &str = "http://172.17.0.3:8080";
 const ID_LENGTH: usize = 3;
 
 #[post("/", data = "<paste>")]
