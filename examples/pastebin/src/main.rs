@@ -13,7 +13,7 @@ use rocket::response::{content::Plain, Debug};
 use rocket::tokio::fs::File;
 use rocket::response::NamedFile;
 use rocket::response::status::NotFound;
-// use rocket_contrib::serve::StaticFiles;
+use rocket::config::{Config, Environment};
 
 
 use crate::paste_id::PasteID;
@@ -49,8 +49,16 @@ async fn index() -> Result<NamedFile, NotFound<String>> {
     NamedFile::open(&path).await.map_err(|e| NotFound(e.to_string()))
 }
 
+
+
 #[launch]
 fn rocket() -> rocket::Rocket {
-    rocket::ignite().mount("/", routes![index, upload, retrieve,files])
+    
+    let config = Config::build(Environment::Staging)
+     .address("172.17.0.3")
+     .port(8080)
+     .finalize();
+
+    rocket::cusom(config).mount("/", routes![index, upload, retrieve,files])
    
 }
