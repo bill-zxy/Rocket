@@ -1,58 +1,67 @@
-#![feature(proc_macro_hygiene, decl_macro)]
+#![feature(proc_macro_hygiene,decl_macro)]
 #[macro_use] extern crate rocket;
+extern crate rand;
 
 mod paste_id;
 #[cfg(test)] mod tests;
 
 use std::io;
+use std::fs::File;
 use std::path::Path;
 use std::path::PathBuf;
-use std::fs::File;
+use std::result::Result;
 
-use rocket::data::Data;
-use rocket::response::{content::Plain, Debug};
-// use rocket::tokio::fs::File;
+use rocket::Data;
+use rocket::response::{content, Debug};
+use rocket::response::content::Plain;
 use rocket::response::NamedFile;
-use rocket::response::status::NotFound;
+use paste_id::PasteID;
 use rocket::config::{Config,Environment};
-use std::fs::File;0.3:8080";
+
+
+const HOST: &str = "http://localhost:8000";
 const ID_LENGTH: usize = 3;
 
 #[post("/", data = "<paste>")]
-async fn upload(paste: Data) -> Result<String, Debug<io::Error>> {
+fn upload(paste: Data) -> Result<String, Debug<io::Error>> {
     let id = PasteID::new(ID_LENGTH);
     let filename = format!("upload/{id}", id = id);
-    let url = format!("{host}/{id}", host = HOST, id = id);
+    let url = format!("{host}/{id}\n", host = HOST, id = id);
 
-    paste.open(128.kibibytes()).stream_to_file(filename).await?;
+    paste.stream_to_file(Path::new(&filename))?;
     Ok(url)
 }
 
 #[get("/<id>",rank = 2)]
-async fn retrieve(id: PasteID<'_>) -> Option<Plain<File>> {
+fn retrieve(id: PasteID<'_>) -> Option<content::Plain<File>> {
     let filename = format!("upload/{id}", id = id);
-    NamedFile::open(&filename).await.map(Plain).ok()
+    File::open(&filename).map(|f|Plain(f)).ok()
 }
 
 #[get("/<file..>", rank =3)]
-async fn files(file: PathBuf) -> Result<NamedFile, NotFound<String>> {
-    let path = Path::new("static/").join(file);
-    NamedFile::open(&path).await.map_err(|e| NotFound(e.to_string()));
+
+fn files(file: PathBuf) -> Option<NamedFile>  {
+   NamedFile::open(Path::new("/service/webserver/static/").join(file)).ok()
 }
+
 
 #[get("/")]
-async fn index() -> Result<NamedFile, NotFound<String>> {
-    let path = Path::new("static/").join("index.html");
-    NamedFile::open(&path).await.map_err(|e| NotFound(e.to_string()));
+fn index() -> Option<NamedFile>  {
+   NamedFile::open(Path::new("/service/webserver/static/index.html")).ok()
 }
 
-
-fn main() {
+ 
+fn rocket() -> rocket::Rocket {
     
     let config = Config::build(Environment::Production)
      .address("172.17.0.3")
      .port(8080)
      .finalize();
+        
+    rocket::custom(config).mount("/",routes![index, upload, retrieve,files]);
+}
 
-    rocket::ignite().mount("/static", routes![index, upload, retrieve,files]).launch();
+fn main() {
+    
+    rocket().launch();
 }
