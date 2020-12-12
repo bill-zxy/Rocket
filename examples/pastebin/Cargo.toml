@@ -6,9 +6,5 @@ edition = "2018"
 publish = false
 
 [dependencies]
-rocket = { path = "../../core/lib" }
+rocket = "0.4.6"
 rand = "0.7"
-[dependencies.rocket_contrib]
-version = "0.4.6"
-default-features = false
-features = ["json"]
