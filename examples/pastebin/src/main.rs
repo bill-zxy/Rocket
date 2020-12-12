@@ -19,7 +19,7 @@ use paste_id::PasteID;
 use rocket::config::{Config,Environment};
 
 
-const HOST: &str = "http://localhost:8000";
+const HOST: &str = "http://localhost:8080";
 const ID_LENGTH: usize = 3;
 
 #[post("/", data = "<paste>")]
@@ -54,11 +54,9 @@ fn index() -> Option<NamedFile>  {
 fn rocket() -> rocket::Rocket {
     
     let config = Config::build(Environment::Production)
-     .address("172.17.0.3")
-     .port(8080)
-     .finalize();
+     .unwrap();
         
-    rocket::custom(config).mount("/",routes![index, upload, retrieve,files]);
+    rocket::custom(config).mount("/",routes![index, upload, retrieve,files])
 }
 
 fn main() {
